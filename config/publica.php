@@ -92,6 +92,42 @@ return [
     'receiver' => null,
 
     /*
+     * Telling PUBLICA that something changed here.
+     *
+     * The other direction, and the one that makes an article editable on the
+     * site without the two copies drifting apart for good. Off until both
+     * lines are set: a connector that has never been given a callback address
+     * stays a one-way destination, which is exactly what it was before.
+     *
+     * `secret` is the channel's `webhook_secret` from PUBLICA - **not** the
+     * publishing token. Two directions, two secrets: the site holds one that
+     * only lets it report its own changes, and losing it does not let anybody
+     * publish.
+     *
+     * Both are shown by PUBLICA on the channel screen when the destination is
+     * created.
+     */
+    'callback' => [
+        'url' => env('PUBLICA_CALLBACK_URL'),
+        'secret' => env('PUBLICA_CALLBACK_SECRET'),
+
+        // Reporting a change must never be what makes saving an article slow,
+        // or what makes it fail. Queued when the site has a queue; a site on
+        // the sync driver sends it inline and that is still fine.
+        'queue' => env('PUBLICA_CALLBACK_QUEUE'),
+    ],
+
+    /*
+     * Watch the configured model and report edits automatically.
+     *
+     * True is the whole point - somebody edits an article in the site's own
+     * admin and PUBLICA finds out. A site whose articles are written by
+     * machinery of its own may prefer to call `Publica::changed($model)` at
+     * the moments it considers meaningful, and turns this off.
+     */
+    'watch' => true,
+
+    /*
      * What this site can do, answered at /ping. PUBLICA trusts this over any
      * assumption of its own, so turn something off here and PUBLICA stops
      * offering it for this destination.

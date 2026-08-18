@@ -94,7 +94,7 @@ class EloquentReceiver implements ReceivesDocuments
 
         return [
             'id' => $model->getKey(),
-            'url' => $this->url($model),
+            'url' => $this->publicUrl($model),
             'status' => $this->hasColumn($model, $statusColumn) ? (string) $model->getAttribute($statusColumn) : null,
         ];
     }
@@ -102,13 +102,17 @@ class EloquentReceiver implements ReceivesDocuments
     /**
      * Where a reader would find this article.
      *
+     * Public because the change report needs the same answer: PUBLICA is told
+     * the live address whether the article was pushed from there or edited
+     * here, and two ways of working it out would eventually disagree.
+     *
      * Built from a route name, because a closure in the config file cannot
      * survive `config:cache` and every production site runs it. When no route
      * is named — a site still wiring up its front end — the answer is null,
      * and PUBLICA shows the article as published without a link rather than
      * showing a link that 404s.
      */
-    protected function url(Model $model): ?string
+    public function publicUrl(Model $model): ?string
     {
         $route = config('publica.url.route');
 

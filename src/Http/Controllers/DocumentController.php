@@ -3,6 +3,7 @@
 namespace Flowiteam\PublicaConnector\Http\Controllers;
 
 use Flowiteam\PublicaConnector\Contracts\ReceivesDocuments;
+use Flowiteam\PublicaConnector\Publica;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,12 @@ use Illuminate\Validation\ValidationException;
  * what an article *becomes* on this site is the receiver's business, because
  * that is the part every site does differently.
  *
+ * Every write goes through `Publica::silently()`. Without it, saving an article
+ * that arrived from PUBLICA fires the observer, which reports the change back
+ * to PUBLICA, which has just made it - two servers notifying each other about
+ * the same edit, forever. The loop is stopped here rather than by trying to
+ * recognise our own writes later, because here is the only place that knows.
+ *
  * Failures answer in JSON with a sentence somebody can act on. PUBLICA shows
  * `message` to the customer verbatim, so "SQLSTATE[23000]" reaches a person
  * who runs a coffee shop — hence the deliberate 500 body below.
@@ -28,20 +35,20 @@ class DocumentController
     {
         $payload = $this->validated($request);
 
-        return $this->attempt(fn () => $this->receiver->store($payload), 201);
+        return $this->attempt(fn () => Publica::silently(fn () => $this->receiver->store($payload)), 201);
     }
 
     public function update(Request $request, string $id): JsonResponse
     {
         $payload = $this->validated($request);
 
-        return $this->attempt(fn () => $this->receiver->update($id, $payload));
+        return $this->attempt(fn () => Publica::silently(fn () => $this->receiver->update($id, $payload)));
     }
 
     public function destroy(string $id): JsonResponse
     {
         return $this->attempt(function () use ($id) {
-            $this->receiver->withdraw($id);
+            Publica::silently(fn () => $this->receiver->withdraw($id));
 
             return null;
         }, 204);

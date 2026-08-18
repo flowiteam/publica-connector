@@ -4,6 +4,7 @@ namespace Flowiteam\PublicaConnector;
 
 use Flowiteam\PublicaConnector\Contracts\ReceivesDocuments;
 use Flowiteam\PublicaConnector\Http\Middleware\VerifyPublicaSignature;
+use Flowiteam\PublicaConnector\Observers\ArticleObserver;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -37,6 +38,7 @@ class PublicaConnectorServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerRoutes();
+        $this->watchArticles();
 
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
@@ -48,6 +50,27 @@ class PublicaConnectorServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../database/migrations' => database_path('migrations'),
             ], 'publica-migrations');
+        }
+    }
+
+    /**
+     * Report edits made on this site back to PUBLICA.
+     *
+     * Only when there is somewhere to report to. A connector that was never
+     * given a callback address stays what it was before this feature existed —
+     * a one-way destination — rather than quietly attaching an observer to
+     * somebody's model for nothing.
+     */
+    protected function watchArticles(): void
+    {
+        if (! config('publica.watch', true) || ! Publica::reports()) {
+            return;
+        }
+
+        $model = (string) config('publica.model', Models\PublicaDocument::class);
+
+        if (class_exists($model)) {
+            $model::observe(ArticleObserver::class);
         }
     }
 

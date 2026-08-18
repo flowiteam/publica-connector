@@ -2,6 +2,7 @@
 
 namespace Flowiteam\PublicaConnector\Http\Controllers;
 
+use Flowiteam\PublicaConnector\Publica;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -21,8 +22,15 @@ class PingController
     {
         return response()->json([
             'version' => 'v1',
-            'connector' => '1.0.0',
-            'capabilities' => (array) config('publica.capabilities', []),
+            'connector' => '1.1.0',
+            'capabilities' => array_merge((array) config('publica.capabilities', []), [
+                // Not a setting: either this site has been given somewhere to
+                // report changes to, or it has not. PUBLICA reads this to know
+                // whether an article edited here will ever be heard about, and
+                // can say so on the channel screen rather than implying a
+                // two-way link that is only half connected.
+                'callback' => Publica::reports(),
+            ]),
         ]);
     }
 }
