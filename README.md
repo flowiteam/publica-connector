@@ -157,7 +157,11 @@ vendor/bin/phpunit
 
 ## Requirements
 
-PHP 8.2+, Laravel 11 or 12.
+PHP 8.2+, Laravel 12.
+
+Laravel 11 is not supported: every 11.x release is under an unpatched security
+advisory, and composer refuses to install one. A site still on 11 should be
+upgraded before it is given a publishing endpoint.
 
 ## Licence
 
