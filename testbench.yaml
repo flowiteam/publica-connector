@@ -1,0 +1,15 @@
+# The package, running as a real site, so the connector can be published to
+# from a real PUBLICA rather than only from its own test suite.
+#
+#   vendor/bin/testbench package:create-sqlite-db
+#   vendor/bin/testbench migrate
+#   PUBLICA_TOKEN=… vendor/bin/testbench serve --port=8124
+providers:
+  - Flowiteam\PublicaConnector\PublicaConnectorServiceProvider
+
+migrations:
+  - database/migrations
+
+env:
+  - APP_KEY="base64:Q1V1SmFsMkxuTFJEVDBRTjhHTGpNZz09QUJDREVGR0g="
+  - DB_CONNECTION=sqlite
