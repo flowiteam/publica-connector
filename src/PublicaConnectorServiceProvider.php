@@ -3,6 +3,7 @@
 namespace Flowiteam\PublicaConnector;
 
 use Flowiteam\PublicaConnector\Contracts\ReceivesDocuments;
+use Flowiteam\PublicaConnector\Contracts\ReceivesMedia;
 use Flowiteam\PublicaConnector\Http\Middleware\VerifyPublicaSignature;
 use Flowiteam\PublicaConnector\Observers\ArticleObserver;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,22 @@ class PublicaConnectorServiceProvider extends ServiceProvider
             $custom = config('publica.receiver');
 
             return $custom ? $app->make($custom) : $app->make(EloquentReceiver::class);
+        });
+
+        /*
+         * Files, the same way — with one shortcut in the middle. A site that
+         * already wrote a receiver for its articles and taught it to hold
+         * pictures too says so by implementing the interface, and needs no
+         * second line of configuration to be found.
+         */
+        $this->app->bind(ReceivesMedia::class, function ($app) {
+            if ($custom = config('publica.media.store')) {
+                return $app->make($custom);
+            }
+
+            $receiver = $app->make(ReceivesDocuments::class);
+
+            return $receiver instanceof ReceivesMedia ? $receiver : $app->make(DiskMediaStore::class);
         });
     }
 
@@ -75,7 +92,7 @@ class PublicaConnectorServiceProvider extends ServiceProvider
     }
 
     /**
-     * The four routes, behind the signature check.
+     * The five routes, behind the signature check.
      *
      * `api` rather than `web`, because there is no session, cookie or CSRF
      * token in a machine-to-machine call — putting the web group on would open

@@ -1,7 +1,7 @@
 # PUBLICA connector
 
 Receive articles from [PUBLICA](https://publica.flowiteam.com) into a Laravel
-site: four signed routes, no admin user, no plugin, and nothing else opened to
+site: five signed routes, no admin user, no plugin, and nothing else opened to
 the outside.
 
 ```bash
@@ -27,6 +27,7 @@ site that has no articles table yet — the package brings its own.
 | `POST /publica/v1/documents` | A new article. Answers `{id, url, status}` |
 | `PUT /publica/v1/documents/{id}` | Edits the one with that id |
 | `DELETE /publica/v1/documents/{id}` | Takes it off the site |
+| `POST /publica/v1/media` | A picture or a video, uploaded before the article that points at it. Answers `{id, url}` |
 
 Nothing else. The routes run on the `api` middleware group and are not part of
 your site's session, so no article that arrives opens a session for nobody.
@@ -111,6 +112,69 @@ class ArticleReceiver implements ReceivesDocuments
 The `id` you return is what PUBLICA stores and addresses every later update to,
 so key articles however you like — just answer consistently.
 
+## The pictures
+
+An article's images and videos are uploaded here **before** the article
+arrives, and the article that follows points at where they landed on this site.
+
+Without that step a published article carries `src="/storage/…"` back into
+PUBLICA's own storage — somebody else's machine, serving your pages' pictures
+until the day it moves a file. That is what happens on a site that turns the
+capability off.
+
+Nothing to configure: files go to the `public` disk under `publica/{year}/{month}/`,
+named after the file with a hash of its contents, so the same photograph sent
+twice is one file. Run `php artisan storage:link` if the site never has — an
+upload refuses with that sentence rather than storing something nobody can
+fetch.
+
+```php
+'media' => [
+    'disk'      => 'public',    // any disk this site has, S3 included
+    'path'      => 'publica',
+    'max_bytes' => 6 * 1024 * 1024,
+    'types'     => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm'],
+    'store'     => null,        // a class implementing ReceivesMedia
+],
+```
+
+The type list is an allowlist because this is a signed request writing a file
+into a publicly served directory: a leaked token is bad, and a leaked token
+that can drop a `.php` into `public/` is the whole server. `svg` is not on the
+list either — it is a document that can carry script, not a picture.
+
+The file travels base64-encoded inside JSON rather than as a multipart upload,
+so that one signing rule covers every route: the signature is over the raw
+body, and a multipart body is assembled by the client with a boundary PUBLICA
+does not choose. It costs a third more bytes, which is why `max_bytes` sits
+below PHP's default `post_max_size` of 8M — raise both together or neither.
+
+A site with a media library of its own implements `ReceivesMedia`:
+
+```php
+use Flowiteam\PublicaConnector\Contracts\ReceivesMedia;
+
+class ArticleReceiver implements ReceivesDocuments, ReceivesMedia
+{
+    public function storeMedia(string $bytes, string $filename, string $alt = ''): array
+    {
+        $attachment = Attachment::fromBytes($bytes, $filename, $alt);
+
+        return ['id' => $attachment->id, 'url' => $attachment->url()];   // absolute
+    }
+
+    // … store(), update(), withdraw() as before
+}
+```
+
+A receiver that implements it is used for files too, with no second line of
+configuration. A site that keeps them apart names the class in `media.store`.
+
+**Upgrading from 1.1.x:** the capability is on by default, but a site that
+published the config file before this release still has `'media' => false` in
+its own copy. Change it, then press **Test connection** in PUBLICA — that is
+what tells PUBLICA the destination can hold files now.
+
 ## Authentication
 
 Every request carries two headers:
@@ -193,9 +257,9 @@ Publica::removed($article->id);  // it is gone from this site
 
 ## What it does not do
 
-- **No media upload yet.** Images arrive as URLs on the PUBLICA side; the
-  `media` capability is off, and PUBLICA does not offer what this says it
-  cannot do.
+- **It does not resize or convert.** The file is stored as it arrives, under a
+  name of this package's choosing. A site that wants thumbnails, WebP variants
+  or an attachment row implements `ReceivesMedia` and does its own work.
 - **Withdrawal does not delete.** The default receiver sets the status to
   `withdrawn`, because withdrawal is reversible everywhere else in PUBLICA and
   somebody who pressed it by accident has to be able to publish again.

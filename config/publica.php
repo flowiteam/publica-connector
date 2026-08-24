@@ -92,6 +92,53 @@ return [
     'receiver' => null,
 
     /*
+     * Where an arriving picture is put.
+     *
+     * PUBLICA uploads the article's images and videos before it sends the
+     * article, and the article then points at what this returns. Without it a
+     * published post carries `src` back into PUBLICA's own storage - somebody
+     * else's machine, serving this site's pictures until the day it moves a
+     * file and stops.
+     */
+    'media' => [
+        // Any disk this site already has. `public` is the one every Laravel
+        // application ships with, and the one that needs `storage:link`.
+        'disk' => env('PUBLICA_MEDIA_DISK', 'public'),
+
+        // Inside that disk. Files land under `{path}/{year}/{month}/`.
+        'path' => env('PUBLICA_MEDIA_PATH', 'publica'),
+
+        /*
+         * The biggest file this site will take, in bytes.
+         *
+         * Under PHP's default `post_max_size` of 8M on purpose: the file
+         * travels base64-encoded, which is a third bigger than the file, and
+         * anything over this limit dies inside the web server with an answer
+         * no human being can read. Raise both together or neither.
+         */
+        'max_bytes' => 6 * 1024 * 1024,
+
+        /*
+         * Extensions this site will hold, and nothing else.
+         *
+         * This is a signed request writing a file into a publicly served
+         * directory: a leaked token is bad, and a leaked token that can drop a
+         * `.php` into `public/` is the whole server. `svg` is deliberately not
+         * here either - it is a document that can carry script, not a picture.
+         */
+        'types' => ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm'],
+
+        /*
+         * Full control, the same way `receiver` gives it for articles: a class
+         * implementing {@see \Flowiteam\PublicaConnector\Contracts\ReceivesMedia}
+         * for a site with a media library of its own. A `receiver` that
+         * implements that interface is used for files too, so a site that has
+         * written one already needs nothing here.
+         */
+        'store' => null,
+    ],
+
+    /*
      * Telling PUBLICA that something changed here.
      *
      * The other direction, and the one that makes an article editable on the
@@ -138,7 +185,12 @@ return [
         'withdraw' => true,
         'schedule' => true,
         'blocks' => true,
-        'media' => false,
+
+        // True since 1.2.0: the package receives files at /publica/v1/media
+        // and puts them on `media.disk`. A site that would rather keep its
+        // articles pointing at PUBLICA's storage turns this off and gets the
+        // hotlink it asked for.
+        'media' => true,
     ],
 
 ];
