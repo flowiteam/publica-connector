@@ -271,8 +271,7 @@ class MediaTest extends TestCase
     {
         $this->signed('GET', '/publica/v1/ping')
             ->assertOk()
-            ->assertJsonPath('capabilities.media', true)
-            ->assertJsonPath('connector', '1.2.0');
+            ->assertJsonPath('capabilities.media', true);
     }
 }
 

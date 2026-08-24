@@ -2,6 +2,7 @@
 
 namespace Flowiteam\PublicaConnector;
 
+use Flowiteam\PublicaConnector\Contracts\DescribesStructure;
 use Flowiteam\PublicaConnector\Contracts\ReceivesDocuments;
 use Flowiteam\PublicaConnector\Contracts\ReceivesMedia;
 use Flowiteam\PublicaConnector\Http\Middleware\VerifyPublicaSignature;
@@ -50,6 +51,18 @@ class PublicaConnectorServiceProvider extends ServiceProvider
 
             return $receiver instanceof ReceivesMedia ? $receiver : $app->make(DiskMediaStore::class);
         });
+
+        // And the same again for the site's own shape: name a class, or teach
+        // the receiver to answer and it is found without one.
+        $this->app->bind(DescribesStructure::class, function ($app) {
+            if ($custom = config('publica.structure.provider')) {
+                return $app->make($custom);
+            }
+
+            $receiver = $app->make(ReceivesDocuments::class);
+
+            return $receiver instanceof DescribesStructure ? $receiver : $app->make(ConfiguredStructure::class);
+        });
     }
 
     public function boot(): void
@@ -92,7 +105,7 @@ class PublicaConnectorServiceProvider extends ServiceProvider
     }
 
     /**
-     * The five routes, behind the signature check.
+     * The six routes, behind the signature check.
      *
      * `api` rather than `web`, because there is no session, cookie or CSRF
      * token in a machine-to-machine call — putting the web group on would open

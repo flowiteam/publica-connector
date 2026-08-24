@@ -139,6 +139,75 @@ return [
     ],
 
     /*
+     * What this site is made of, answered at /structure.
+     *
+     * PUBLICA keeps a mirror of every destination's sections, labels and
+     * bylines, and files each article by rules the customer set once - "the
+     * roasting cluster goes in Coffee, ten a month under this byline". A site
+     * that cannot be asked what it has gets articles that arrive unfiled and
+     * wait for somebody.
+     *
+     * Empty by default, because the package's own table has no taxonomy at
+     * all. Two lines here are usually the whole job.
+     */
+    'structure' => [
+
+        /*
+         * Taxonomy name => the model behind it.
+         *
+         * **`category` and `post_tag` are not free-form.** PUBLICA's rules are
+         * keyed on the first and its tag matcher on the second; a site that
+         * answers `sections` describes itself perfectly and gets nothing
+         * filed. The names come from WordPress, where the mirror was first
+         * built, and renaming them now would mean migrating stored rules on
+         * every customer's installation.
+         *
+         * Columns are read from the table rather than assumed: `name` or
+         * `title`, `slug` if there is one, `parent_id` for a tree. Name them
+         * explicitly when the guess would be wrong.
+         *
+         *     'category' => ['model' => App\Models\Category::class],
+         *     'post_tag' => ['model' => App\Models\Tag::class, 'counts' => 'posts'],
+         */
+        'taxonomies' => [],
+
+        /*
+         * Who can be the byline. PUBLICA divides a month between them by the
+         * quotas somebody sets on its own screen - "ten under one, fifteen
+         * under another" - so this list is people who may sign an article,
+         * not every account on the site.
+         *
+         *     'authors' => ['model' => App\Models\Author::class],
+         */
+        'authors' => [],
+
+        /*
+         * The column that says which language a section belongs to, when this
+         * site keeps a set per language. PUBLICA sends the language it is
+         * publishing in and gets only that one back - otherwise an English
+         * article is offered Ukrainian sections, and somebody files it into a
+         * category its readers will never see.
+         */
+        'locale' => 'locale',
+
+        /*
+         * A ceiling per taxonomy, busiest first. A blog that collected nine
+         * thousand labels over a decade is exactly the site somebody
+         * connects, and what survives the cut should be the part of it people
+         * actually use.
+         */
+        'limit' => 500,
+
+        /*
+         * Full control: a class implementing
+         * {@see \Flowiteam\PublicaConnector\Contracts\DescribesStructure}.
+         * A `receiver` that implements it is used for this too, so a site that
+         * has written one already needs nothing here.
+         */
+        'provider' => null,
+    ],
+
+    /*
      * Telling PUBLICA that something changed here.
      *
      * The other direction, and the one that makes an article editable on the
@@ -184,6 +253,14 @@ return [
         'update' => true,
         'withdraw' => true,
         'schedule' => true,
+        // True because filing under a byline here is one column on the
+        // receiving model, not a permission. WordPress needs
+        // `edit_others_posts` and answers 201 without it while quietly filing
+        // everything under the connected account - which is what this flag
+        // exists to warn about, and what does not happen here. A site whose
+        // receiver ignores `placement` describes no authors either, so the
+        // question never reaches anybody.
+        'other_authors' => true,
         'blocks' => true,
 
         // True since 1.2.0: the package receives files at /publica/v1/media

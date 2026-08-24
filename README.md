@@ -1,7 +1,7 @@
 # PUBLICA connector
 
 Receive articles from [PUBLICA](https://publica.flowiteam.com) into a Laravel
-site: five signed routes, no admin user, no plugin, and nothing else opened to
+site: six signed routes, no admin user, no plugin, and nothing else opened to
 the outside.
 
 ```bash
@@ -28,6 +28,7 @@ site that has no articles table yet — the package brings its own.
 | `PUT /publica/v1/documents/{id}` | Edits the one with that id |
 | `DELETE /publica/v1/documents/{id}` | Takes it off the site |
 | `POST /publica/v1/media` | A picture or a video, uploaded before the article that points at it. Answers `{id, url}` |
+| `GET /publica/v1/structure` | What this site is made of: its sections, labels and bylines. Answers `{terms, authors}` |
 
 Nothing else. The routes run on the `api` middleware group and are not part of
 your site's session, so no article that arrives opens a session for nobody.
@@ -175,6 +176,59 @@ published the config file before this release still has `'media' => false` in
 its own copy. Change it, then press **Test connection** in PUBLICA — that is
 what tells PUBLICA the destination can hold files now.
 
+## Where an article lands
+
+PUBLICA files articles by rules a customer sets once — "the roasting cluster
+goes in Coffee, ten a month under this byline" — and it can only do that for a
+site it can ask what it has. Name your models and it can:
+
+```php
+'structure' => [
+    'taxonomies' => [
+        'category' => ['model' => App\Models\Category::class],
+        'post_tag' => ['model' => App\Models\Tag::class],
+    ],
+
+    'authors' => ['model' => App\Models\Author::class],
+],
+```
+
+**`category` and `post_tag` are not free-form.** PUBLICA's rules are keyed on
+the first and its tag matcher on the second; a site that answers `sections`
+describes itself perfectly and gets nothing filed. The names come from
+WordPress, where that mirror was first built.
+
+Columns are read from your table rather than assumed — `name` or `title`, a
+`slug` if there is one, `parent_id` for a tree, and a `posts` relation counted
+so the busiest sections come first. Name them explicitly when a guess would be
+wrong (`['model' => …, 'name' => 'label', 'parent' => 'under_id']`).
+
+A site whose sections are per language keeps a `locale` column: PUBLICA says
+which language it is publishing in, and gets only that language's sections
+back. Anything less ordinary implements `DescribesStructure` instead — and a
+`receiver` that implements it is used for this too, with no second line of
+config.
+
+Then the article arrives knowing where it goes, in **your** ids, which PUBLICA
+only ever learned by reading them from you:
+
+```json
+{
+  "title": "Choosing a roast",
+  "placement": {"categories": ["3"], "tags": ["9", "11"], "author": "2"}
+}
+```
+
+What to do with it is the receiver's business, and two rules are worth copying
+from ours:
+
+- **An id you do not have is ignored, never created.** A miss means the section
+  was deleted here after PUBLICA read it, and a blog that quietly grows forty
+  tags is a mess somebody finds six months later.
+- **Only file what is unfiled.** Where an article sits is a decision somebody
+  on this site can change; re-publishing a corrected paragraph should not drag
+  it back to where a rule put it months ago.
+
 ## Authentication
 
 Every request carries two headers:
@@ -257,6 +311,9 @@ Publica::removed($article->id);  // it is gone from this site
 
 ## What it does not do
 
+- **It does not invent a section.** `/structure` describes what exists and
+  `placement` names ids from it. Nothing here creates a category, a tag or an
+  author because an article arrived mentioning one.
 - **It does not resize or convert.** The file is stored as it arrives, under a
   name of this package's choosing. A site that wants thumbnails, WebP variants
   or an attachment row implements `ReceivesMedia` and does its own work.

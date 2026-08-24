@@ -74,6 +74,13 @@ class DocumentController
                 'html' => ['nullable', 'string'],
                 'status' => ['nullable', 'string'],
                 'published_at' => ['nullable', 'date'],
+                // Where PUBLICA decided this belongs on this site, in this
+                // site's own ids - read back from /structure. Only shape is
+                // checked here; what it means is the receiver's business.
+                'placement' => ['nullable', 'array'],
+                'placement.categories' => ['nullable', 'array'],
+                'placement.tags' => ['nullable', 'array'],
+                'placement.author' => ['nullable'],
             ]);
         } catch (ValidationException $e) {
             abort(response()->json([

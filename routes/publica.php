@@ -3,16 +3,21 @@
 use Flowiteam\PublicaConnector\Http\Controllers\DocumentController;
 use Flowiteam\PublicaConnector\Http\Controllers\MediaController;
 use Flowiteam\PublicaConnector\Http\Controllers\PingController;
+use Flowiteam\PublicaConnector\Http\Controllers\StructureController;
 use Illuminate\Support\Facades\Route;
 
 /*
- * Five routes, and nothing else opened to the outside.
+ * Six routes, and nothing else opened to the outside.
  *
  * The prefix carries the API version, so a v2 that changes the payload can run
  * beside v1 while sites upgrade at their own pace — which they will, because
  * they are somebody else's sites.
  */
 Route::get('/ping', PingController::class)->name('publica.ping');
+
+// What this site is made of, so PUBLICA can file an article into it rather
+// than leaving it for a person to sort. Reads, writes nothing.
+Route::get('/structure', StructureController::class)->name('publica.structure');
 
 Route::post('/documents', [DocumentController::class, 'store'])->name('publica.documents.store');
 Route::put('/documents/{id}', [DocumentController::class, 'update'])->name('publica.documents.update');
