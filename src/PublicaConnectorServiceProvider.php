@@ -73,6 +73,8 @@ class PublicaConnectorServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         if ($this->app->runningInConsole()) {
+            $this->commands([Commands\ConnectCommand::class]);
+
             $this->publishes([
                 __DIR__.'/../config/publica.php' => config_path('publica.php'),
             ], 'publica-config');

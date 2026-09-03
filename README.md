@@ -15,6 +15,18 @@ Then one line in `.env`:
 PUBLICA_TOKEN=a-long-random-string
 ```
 
+or let the command write it - PUBLICA's connect screen hands you the whole
+thing as one paste:
+
+```bash
+php artisan publica:connect <token> \
+    --callback-url="https://publica.example/connector/v1/channels/7/events" \
+    --callback-secret="..."
+```
+
+It writes the lines into `.env`, rebuilds the config cache when there is
+one, and the channel screen in PUBLICA notices the site by itself.
+
 Paste the same string into the channel in PUBLICA, press **Test connection**,
 and the site is a publishing destination. That is the whole integration on a
 site that has no articles table yet — the package brings its own.
