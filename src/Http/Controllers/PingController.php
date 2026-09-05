@@ -22,7 +22,7 @@ class PingController
     {
         return response()->json([
             'version' => 'v1',
-            'connector' => '1.3.0',
+            'connector' => '1.4.1',
             'capabilities' => array_merge((array) config('publica.capabilities', []), [
                 // Not a setting: either this site has been given somewhere to
                 // report changes to, or it has not. PUBLICA reads this to know
