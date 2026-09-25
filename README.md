@@ -1,6 +1,6 @@
 # PUBLICA connector
 
-Receive articles from [PUBLICA](https://publica.flowiteam.com) into a Laravel
+Receive articles from [PUBLICA](https://publica.fluviaweb.com) into a Laravel
 site: six signed routes, no admin user, no plugin, and nothing else opened to
 the outside.
 
@@ -264,7 +264,7 @@ Off until you give it somewhere to report to. Two more lines in `.env`, both
 shown on the channel screen in PUBLICA:
 
 ```ini
-PUBLICA_CALLBACK_URL=https://publica.flowiteam.com/connector/v1/channels/42/events
+PUBLICA_CALLBACK_URL=https://publica.fluviaweb.com/connector/v1/channels/42/events
 PUBLICA_CALLBACK_SECRET=the-webhook-secret-from-that-screen
 ```
 
@@ -362,4 +362,4 @@ upgraded before it is given a publishing endpoint.
 
 ## Licence
 
-MIT © [flowITeam](https://flowiteam.com)
+MIT © [Fluviaweb](https://fluviaweb.com)

@@ -71,7 +71,7 @@ class StructureTest extends TestCase
         Section::create(['name' => 'Кава', 'slug' => 'kava', 'locale' => 'uk']);
 
         Label::create(['name' => 'roasting', 'slug' => 'roasting']);
-        Writer::create(['name' => 'flowITeam', 'slug' => 'flowiteam']);
+        Writer::create(['name' => 'Fluviaweb', 'slug' => 'flowiteam']);
 
         // Two articles in Coffee, none in Equipment: the busy one first.
         PublicaDocument::create(['title' => 'One', 'section_id' => $coffee->id]);
@@ -99,7 +99,7 @@ class StructureTest extends TestCase
         $this->assertSame($coffee['remote_id'], $equipment['parent_remote_id']);
 
         $this->assertSame('post_tag', collect($response->json('terms'))->firstWhere('name', 'roasting')['taxonomy']);
-        $this->assertSame('flowITeam', $response->json('authors.0.name'));
+        $this->assertSame('Fluviaweb', $response->json('authors.0.name'));
     }
 
     /**

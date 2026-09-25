@@ -2,11 +2,11 @@
     "name": "flowiteam/publica-connector",
     "description": "Receive articles from PUBLICA into a Laravel site: four signed routes, no admin user, no open REST surface.",
     "keywords": ["laravel", "publica", "publishing", "content"],
-    "homepage": "https://publica.flowiteam.com",
+    "homepage": "https://publica.fluviaweb.com",
     "license": "MIT",
     "authors": [
         {
-            "name": "flowITeam",
+            "name": "Fluviaweb",
             "email": "info@flowiteam.com"
         }
     ],
